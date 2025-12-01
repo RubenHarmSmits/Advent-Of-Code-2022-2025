@@ -1,45 +1,66 @@
 package days.year2016
 
 import days.Day
-import kotlin.math.*
 
 fun main() {
     println(Day21().solve())
 }
 
 class Day21 : Day(21, 2016) {
-    var tot = 0
 
-    var input = "abcde".toCharArray();
+    fun solve(): Any{
+        while (true){
+            var input = "fbgdceah".toCharArray().toMutableList().shuffled();
+            var output = solveInput(input.toCharArray())
+            if (output == "fbgdceah") return input.joinToString("")
+        }
 
-    var list: MutableList<Int> = mutableListOf()
+    }
 
-    fun solve(): Any {
-        var a = inputList.map { it }
+
+    fun solveInput(inp: CharArray): String {
+        var input = inp
+        inputList.map { it }
                 .forEachIndexed { i, it ->
                     var list = it.split(" ");
                     if (list.contains("reverse")) {
-                        // reverse positions 0 through 4
                         val (x, xx, firstIndex, xxx, secondIndex) = list
                         var str = input.joinToString("")
-                        val begin = str.substring(0, firstIndex.toInt()) + str.substring(firstIndex.toInt(), secondIndex.toInt()+1).reversed() + str.substring(secondIndex.toInt()+1)
+                        val begin = str.substring(0, firstIndex.toInt()) + str.substring(firstIndex.toInt(), secondIndex.toInt() + 1).reversed() + str.substring(secondIndex.toInt() + 1)
                         input = begin.toCharArray()
 
                     }
                     if (list.contains("rotate") && list.contains("based")) {
-
+                        val letter = list[6]
+                        var steps = input.indexOf(letter[0])
+                        if(steps>=4)steps++
+                        val division = (steps +1) % input.size
+                        val str = input.joinToString("").substring(input.size - division) + input.joinToString("").substring(0 until input.size - division)
+                        input = str.toCharArray()
                     }
                     if (list.contains("rotate") && list.contains("left")) {
-                        // rotate left 1 step
-                        val steps = list[2]
-
-
+                        val steps = list[2].toInt()
+                        val division = steps % input.size
+                        val str = input.joinToString("").substring(division) + input.joinToString("").substring(0 until division)
+                        input = str.toCharArray()
                     }
                     if (list.contains("rotate") && list.contains("right")) {
-
+                        val steps = list[2].toInt()
+                        val division = steps % input.size
+                        val str = input.joinToString("").substring(input.size - division) + input.joinToString("").substring(0 until input.size - division)
+                        input = str.toCharArray()
                     }
                     if (list.contains("move")) {
+                        val toMove = list[2].toInt()
+                        val destination = list[5].toInt()
+                        var strL = input.joinToString("").toMutableList()
+                        strL.removeAt(toMove)
+                        val str = strL.joinToString("")
+                        val before = str.substring(0, destination)
+                        val inbetween = input[toMove]
+                        val after = str.substring(destination)
 
+                        input = (before + inbetween + after).toCharArray()
                     }
                     if (list.contains("swap") && list.contains("position")) {
                         // swap position 4 with position 0
@@ -48,18 +69,14 @@ class Day21 : Day(21, 2016) {
                         input[list[5].toInt()] = temp
                     }
                     if (list.contains("swap") && list.contains("letter")) {
-                        // swap letter d with letter b
-                        // "abcde"
                         val indexoffirst = input.indexOf(list[2][0])
                         val indexofsecond = input.indexOf(list[5][0])
                         val temp = input[indexoffirst]
                         input[indexoffirst] = input[indexofsecond]
                         input[indexofsecond] = temp
                     }
-                    println(input)
-
                 }
-        return input.toString();
+        return input.joinToString("");
     }
 
 

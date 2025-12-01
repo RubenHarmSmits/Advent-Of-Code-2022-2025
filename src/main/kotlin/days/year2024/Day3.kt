@@ -1,37 +1,43 @@
 package days.year2024
 
 import days.Day
-import kotlin.math.abs
 
 fun main() {
-    println(Day2().solve())
+    println(Day3().solve())
 }
 
-class Day2 : Day(2, 2024) {
+class Day3 : Day(3, 2024) {
+
+    var enabled: Boolean = true
 
     fun solve(): Any {
-        return inputList
-            .map{it.split(" ").ints()}
-            .filter{ list ->
-                list.indices.any {
-                    val copy = list.toMutableList()
-                    copy.removeAt(it)
-                    reportIsSafe(copy)
-                }
-        }.size
+        println(inputString)
+        return inputString.indices.sumOf {
+            checkScore(inputString.substring(it))
+        }
     }
 
-    private fun reportIsSafe(list: List<Int>): Boolean {
-        val first = list[1] - list[0]
-        var previous = list[0]
-        val ans = list.drop(1).all{
-            if(!areBothPositiveOrNegative(it-previous,first)) return@all false
-            val ab = abs(it-previous)
-            if(ab>3||ab<0) return@all false
-            previous = it
-            return@all true;
+    private fun checkScore(line: String): Int {
+        try {
+            if(line.substring(0,4)=="do()") enabled=true
+            if(line.substring(0,7)=="don't()") enabled=false
+            if(line.substring(0,4)!="mul(") return 0
+            val num1 = extractFirstNumber(line.substring(4))
+            val lennum1 = num1.length
+            val num2 = extractFirstNumber(line.substring(4+lennum1+1))
+            val lennum2 = num2.length
+            if(line[lennum1+lennum2+5]!=')') return 0
+            return if (enabled) (num1.toInt() * num2.toInt()) else 0
+        } catch (e: Exception){
+            return 0
         }
-        return ans
+
+    }
+
+    fun extractFirstNumber(input: String): String {
+        val regex = Regex("^\\d+")
+        val matchResult = regex.find(input)
+        return matchResult?.value ?: throw Exception("Invalid input")
     }
 
 

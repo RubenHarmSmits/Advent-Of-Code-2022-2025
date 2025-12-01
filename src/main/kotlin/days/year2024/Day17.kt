@@ -3,122 +3,70 @@ package days.year2024
 import days.Day
 
 fun main() {
-    println(Day16().solve())
+    println(Day17().solve())
 }
 
-class Day16 : Day(16, 2024) {  //417 too low
+class Day17 : Day(17, 2024) {  // too low 37221274271216
 
-    data class Node(
-        val point: Point,
-        var options: MutableMap<Point, Pair<Int, List<Point>>> = mutableMapOf(),
-        var minimalCost: Pair<Int, List<Point>> = Int.MAX_VALUE to mutableListOf(),
-        var visited: Boolean = false
-    ) {}
-
-    val grid = matrixOfInput(inputList)
-    val turningPoints = mutableListOf<Node>()
-    val startingNode = Node(grid.findChar('S'))
-    val endNode = Node(grid.findChar('E'))
-
-
+    val program = listOf(2, 4, 1, 2, 7, 5, 4, 7, 1, 3, 5, 5, 0, 3, 3, 0)
+    val beginningRightDigits = 35184372088832L
     fun solve(): Any {
-        turningPoints.add(startingNode)
-        turningPoints.add(endNode)
-        grid.indices.forEach { y ->
-            grid.indices.forEach { x ->
-                if (grid[y][x] == '.' && grid.getAdjacentCoordinates(y, x).filter { grid.get(it) == '.' }.size > 2) {
-                    turningPoints.add(Node(Point(y, x)))
+        var a = beginningRightDigits
+        var n = 14
+        while (n >= 0) {
+            var found = false
+            while (!found){
+                val output = getOutput(a)
+                if(output.takeLast(15-n)==program.takeLast(15-n).map{it.toLong()}){
+                    found=true
+                    n-=1
+                } else {
+                    a+=(8L `**` n.toLong())
                 }
             }
         }
-
-        turningPoints.forEach { point ->
-            findOptions(point)
-        }
-        dijkstra()
-        return answer.size + 1
+        return a
     }
 
 
-    var answer: MutableSet<Point> = mutableSetOf()
-    val max = 75416
+    var b = 0L
+    var c = 0L
+    var a = 0L
 
-    private fun dijkstra() {
-        startingNode.minimalCost = 0 to startingNode.minimalCost.second.toMutableList()
-        while (turningPoints.any { !it.visited }) {
-            val smallest = turningPoints.filter { !it.visited }.minByOrNull { it.minimalCost.first }!!
-            smallest.visited = true
-            smallest.options.forEach { optionScore ->
-                val option = findNode(optionScore.key)
-
-                val currentLowest = option.minimalCost.first
-                val currentScore = smallest.minimalCost.first + optionScore.value.first
-
-                if (currentScore == currentLowest) {
-                    option.minimalCost =
-                        currentScore to (optionScore.value.second + smallest.minimalCost.second + option.minimalCost.second)
-                }
-                if (currentScore < currentLowest) {
-                    option.minimalCost =
-                        currentScore to (smallest.minimalCost.second + optionScore.value.second).toMutableList()
-                }
-                if (option == endNode && option.minimalCost.first == max) {
-                    println(option.minimalCost.second)
-                    answer += option.minimalCost.second
-                }
-
+    fun getOutput(aa: Long): List<Long> {
+        var output = listOf<Long>()
+        var pointer = 0
+        a = aa
+        b = 0L
+        c = 0L
+        while (pointer < program.size) {
+            val opcode = program[pointer]
+            val operand = program[pointer + 1].toLong()
+            when (opcode) {
+                0 -> a = a / (2L `**` getCombo(operand))
+                1 -> b = b xor operand
+                2 -> b = getCombo(operand) % 8
+                3 -> if (a != 0L) pointer = (operand - 2).toInt()
+                4 -> b = b xor c
+                5 -> output += getCombo(operand) % 8L
+                6 -> b = a / (2L `**` getCombo(operand))
+                7 -> c = a / (2L `**` getCombo(operand))
             }
+
+            pointer += 2
         }
+
+        return output
     }
 
-    private fun findNode(point: Point): Node {
-        return turningPoints.find { it.point == point } ?: throw Exception("Not found")
-    }
-
-    private fun findOptions(node: Node) {
-        val neighbors = grid.getAdjacentCoordinates(node.point).filter { grid.get(it) == '.' }
-        neighbors.forEach {
-            traverse(calculateDirection(node.point, it), node, it, 1, mutableListOf(), mutableSetOf())
+    private fun getCombo(operand: Long): Long {
+        when (operand) {
+            0L, 1L, 2L, 3L -> return operand
+            4L -> return a
+            5L -> return b
+            6L -> return c
         }
-    }
-
-    private fun traverse(
-        direction: Direction,
-        startNode: Node,
-        point: Point,
-        score: Int,
-        mem: MutableList<String>,
-        steps: MutableSet<Point>
-    ) {
-        val hash = "$direction $point"
-        if (mem.contains(hash)) return
-        mem.add(hash)
-        steps.add(point)
-        val turningPoint = turningPoints.find { it.point == point }
-        val iamturningpoint = turningPoint != null
-        if (turningPoint != null) {
-            val temp = startNode.options[turningPoint.point]
-            val currentScore = temp?.first ?: (score + 1000)
-            if (currentScore > score + 100) {
-                startNode.options[turningPoint.point] = score + 1000 to steps.toMutableList()
-            }
-        }
-        val neighbors = grid.getAdjacentCoordinates(point).filter { ".ES".contains(grid.get(it)) }
-        neighbors.forEach { neighbour ->
-            val newDirection = calculateDirection(point, neighbour)
-            if (!directionIsOpposite(newDirection, direction)) {
-                if (!(iamturningpoint && isTurn(point, neighbour, direction))) {
-                    traverse(
-                        newDirection,
-                        startNode,
-                        neighbour,
-                        score + 1 + if (isTurn(point, neighbour, direction)) 1000 else 0,
-                        mem,
-                        steps.toMutableSet()
-                    )
-                }
-            }
-        }
+        throw IllegalStateException("Unreachable")
     }
 
 }

@@ -3,48 +3,60 @@ package days.year2024
 import days.Day
 
 fun main() {
-    println(Day11().solve())
+    println(Day12().solve())
 }
 
-class Day11 : Day(11, 2024) {
+class Day12 : Day(12, 2024) {
 
-    val input = inputString.split(" ")
+    data class Region(
+        val startingPoint: Point,
+        val startingLetter: Char,
+        val region: MutableList<Point>,
+        var fences: Int
+    )
 
-    private var counts = mutableMapOf<String, Long>()
-    private val transPosing = mutableMapOf<String, List<String>>()
+    val grid = matrixOfInput(inputList)
+    val memory = mutableListOf<Point>()
+    val regions = mutableListOf<Region>()
 
     fun solve(): Any {
-
-        input.forEach { num ->
-            counts[num] = 1
-        }
-
-        repeat(75) {
-            val newCounts = mutableMapOf<String, Long>()
-            counts.forEach { (num, count) ->
-                val transposesTo: List<String> = transPosing.getOrElse(num) {
-                    val a = transposesTo(num)
-                    transPosing[num] = a
-                    a
+        grid.indices.forEach { y ->
+            grid.indices.forEach { x ->
+                val p = Point(y, x)
+                if (p !in memory) {
+                    val newRegion = Region(p, grid.get(p), mutableListOf(), 0)
+                    regions.add(newRegion)
+                    checkPlots(newRegion, Point(y, x))
                 }
-                transposesTo.forEach { newCounts[it] = newCounts.getOrPut(it) { 0 } + count }
             }
-            counts = newCounts
-
         }
-
-        return counts.values.sum()
+        println(regions.map{it.startingLetter})
+        return regions.sumOf {
+            (it.fences - getScore(it.region)) * it.region.size
+        }
     }
 
-    private fun transposesTo(number: String): List<String> {
-        if (number == "0") return listOf("1")
-        else if (number.length % 2 == 0) {
-            return listOf(
-                number.substring(0, number.length / 2),
-                number.substring(number.length / 2).toLong().toString()
-            )
-        } else {
-            return listOf((number.toLong() * 2024L).toString())
+    private fun getScore(region: MutableList<Point>):Int {
+        var score = 0
+        grid.indices.forEach { y->
+            grid[0].indices.forEach { x ->
+                if(Point(y, x) in region && Point(y, x+1) in region && Point(y-1, x) !in region && Point(y-1, x+1) !in region) score++
+                if(Point(y, x) in region && Point(y, x+1) in region && Point(y+1, x) !in region && Point(y+1, x+1) !in region) score++
+                if(Point(y, x) in region && Point(y+1, x) in region && Point(y, x-1) !in region && Point(y+1, x-1) !in region) score++
+                if(Point(y, x) in region && Point(y+1, x) in region && Point(y, x+1) !in region && Point(y+1, x+1) !in region) score++
+            }
+        }
+        return score
+    }
+
+    private fun checkPlots(region: Region, point: Point) {
+        if (point in memory) return
+        memory.add(point)
+        region.region.add(point)
+        val neighbours = grid.getAdjacentCoordinates(point).filter { grid.get(it) == region.startingLetter }
+        region.fences += 4 - neighbours.size
+        neighbours.filter { it !in memory }.forEach {
+            checkPlots(region, it)
         }
     }
 

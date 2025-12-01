@@ -1,47 +1,62 @@
 package days.year2024
 
 import days.Day
-import days.Matrix
+import org.jgrapht.alg.clique.BronKerboschCliqueFinder
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.graph.SimpleGraph
 
 fun main() {
-    println(Day20().solve())
+    println(Day23().solve())
 }
 
-class Day20 : Day(20, 2024) {
+class Day23 : Day(23, 2024) {
 
-    val originalGrid = matrixOfInput(inputList)
-    val startPoint = originalGrid.findChar('S')
-    val endPoint = originalGrid.findChar('E')
-    val originalPath: List<Point> = makeOriginalPath(originalGrid)
+    class Computer(val name: String, val connected: MutableList<Computer> = mutableListOf())
 
-    private fun makeOriginalPath(originalGrid: Matrix<Char>): List<Point> {
-        val path = mutableListOf<Point>()
-        var point = startPoint
-        var previousPoint = startPoint
-        while (point != endPoint) {
-            path.add(point)
-            val a = originalGrid.getAdjacentCoordinates(point).filter { originalGrid.get(it) in ".E" }
-                .find { it != previousPoint }!!
-            previousPoint = point
-            point = a
-        }
-        path.add(endPoint)
-        return path
-    }
+    var computers = mutableListOf<Computer>()
 
     fun solve(): Any {
-        return originalPath.sumOf { findCheats(it) }
+        val list = inputList.map { it.split("-").let { Pair(it[0], it[1])  } }
+        list.forEach {
+            computers.add(Computer(it.first))
+            computers.add(Computer(it.second))
+        }
+
+        computers = computers.distinctBy { it.name }.toMutableList()
+
+        list.forEach { item ->
+            val f = computers.find { it.name == item.first }!!
+            val s = computers.find { it.name == item.second }!!
+            f.connected.add(s)
+            s.connected.add(f)
+        }
+
+
+        val graph = SimpleGraph<String, DefaultEdge>(DefaultEdge::class.java)
+
+
+
+        computers.forEach {computer ->
+            computer.connected.forEach { connectedComputer ->
+                graph.addVertex(computer.name)
+                graph.addVertex(connectedComputer.name)
+                graph.addEdge(connectedComputer.name, computer.name)
+            }
+        }
+
+        val finder: BronKerboschCliqueFinder<String, DefaultEdge> = BronKerboschCliqueFinder(graph)
+        finder.maximumIterator().forEach { println(it) }
+
+        return computers.combinations(3).filter { combinationIsCorrect(it) }.size
     }
 
-    private fun findCheats(spoint: Point): Int {
-        return originalPath
-            .filter { pendoint -> manhattanDistance(spoint, pendoint) <= 20 }
-            .count { pendoint ->
-                originalPath.indexOf(pendoint) - originalPath.indexOf(spoint) - manhattanDistance(
-                    spoint,
-                    pendoint
-                ) >= 100
-            }
+    fun combinationIsCorrect(combination: List<Computer>): Boolean {
+        val (first, second, third) = combination
+        return first in second.connected && first in third.connected &&
+                second in first.connected && second in third.connected &&
+                third in first.connected && third in second.connected &&
+                (first.name.startsWith("t")||second.name.startsWith("t")||third.name.startsWith("t"))
     }
+
 
 }

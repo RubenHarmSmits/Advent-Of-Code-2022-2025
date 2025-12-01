@@ -3,56 +3,50 @@ package days.year2024
 import days.Day
 
 fun main() {
-    println(Day4().solve())
+    println(Day5().solve())
 }
 
-class Day4 : Day(4, 2024) {
-
-    val grid = matrixOfInput(inputList)
-    var total =0
-
-    val a = listOf(3,4,5).count{it==3}
+class Day5 : Day(5, 2024) {
 
     fun solve(): Any {
-        grid.indices.forEach { y->
-            grid[0].indices.forEach { x->
-                checkXmas(Point(y,x))
+        var (ruless, pages) = inputList.splitBy { it == "" }
+        val rules = ruless.map { it.split('|').ints() }
+        return pages.map { it.split(',').ints() }
+            .sumOf { page ->
+                if (rules.any { rule ->
+                        ruleIsInvalid(rule, page)
+                    }) checkNewOrdering(page) else 0
             }
-        }
-        return total
     }
 
-    private fun checkXmas(point: Point): Int {
-        if(grid.get(point)!='A') return 0
-        try {
-            val first = "${grid.get(Point(point.y-1, point.x+1))} + ${grid.get(Point(point.y+1, point.x-1))}"
-            val second = "${grid.get(Point(point.y+1, point.x+1))} + ${grid.get(Point(point.y-1, point.x-1))}"
-            if(first.contains('M')&&first.contains('S')&&second.contains('M')&&second.contains('S')) total+=1
-        } catch (e: Exception) {
-            return 0
-        }
+    private fun checkNewOrdering(page: List<Int>): Int {
+        var (ruless, pages) = inputList.splitBy { it == "" }
+        val rules = ruless.map { it.split('|').ints() }.filter { page.contains(it[0]) && page.contains(it[1]) }
 
-        return 0
+        var newPage = page.toMutableList()
 
-    }
-
-    private fun checkLetter(letterInt: Int, point: Point, direction: Point): Int {
-        val newpoint = Point(direction.y + point.y,direction.x + point.x)
-
-        try {
-            val letter = grid[newpoint.y][newpoint.x]
-            when(letterInt){
-                1 -> if(letter != 'M') return 0
-                2 -> if(letter != 'A') return 0
-                3 -> return if(letter != 'S') 0 else 1
+        var found = false
+        while (!found) {
+            rules.forEach { rule ->
+                if (ruleIsInvalid(rule, newPage)) {
+                    newPage = swapInts(newPage, rule[0], rule[1])
+                    if (pageIsCorrect(newPage, rules)) found = true
+                }
             }
-            return checkLetter(letterInt+1, newpoint, direction)
 
-        } catch (e: Exception){
-            return 0
         }
+        return newPage[(newPage.size - 1) / 2]
+    }
 
+    private fun pageIsCorrect(page: List<Int>, rules: List<List<Int>>) = !rules.any {
+        ruleIsInvalid(it, page)
     }
 
 
+    private fun ruleIsInvalid(rule: List<Int>, page: List<Int>): Boolean {
+        val firstIndex = page.indexOf(rule[0])
+        val secondIndex = page.indexOf(rule[1])
+        if (firstIndex == -1 || secondIndex == -1) return false
+        return firstIndex > secondIndex;
+    }
 }

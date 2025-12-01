@@ -3,29 +3,49 @@ package days.year2024
 import days.Day
 
 fun main() {
-    println(Day10().solve())
+    println(Day11().solve())
 }
 
-class Day10 : Day(10, 2024) {
+class Day11 : Day(11, 2024) {
 
-    val grid = matrixOfInput(inputList)
+    val input = inputString.split(" ")
 
-    var total = 0
+    private var counts = mutableMapOf<String, Long>()
+    private val transPosing = mutableMapOf<String, List<String>>()
 
     fun solve(): Any {
-        grid.indices.forEach { y ->
-            grid[0].indices.forEach { x ->
-                if (grid[y][x] == '0') total += checkScore(Point(y, x), 0)
-            }
+
+        input.forEach { num ->
+            counts[num] = 1
         }
 
-        return total
+        repeat(75) {
+            val newCounts = mutableMapOf<String, Long>()
+            counts.forEach { (num, count) ->
+                val transposesTo: List<String> = transPosing.getOrElse(num) {
+                    val a = transposesTo(num)
+                    transPosing[num] = a
+                    a
+                }
+                transposesTo.forEach { newCounts[it] = newCounts.getOrPut(it) { 0 } + count }
+            }
+            counts = newCounts
+
+        }
+
+        return counts.values.sum()
     }
 
-    private fun checkScore(point: Point, cur: Int): Int {
-        if (cur == 9) return 1
-        return grid.getAdjacentCoordinates(point)
-            .filter { grid.get(it).digitToInt() == cur + 1 }
-            .sumOf { checkScore(it, cur + 1) }
+    private fun transposesTo(number: String): List<String> {
+        if (number == "0") return listOf("1")
+        else if (number.length % 2 == 0) {
+            return listOf(
+                number.substring(0, number.length / 2),
+                number.substring(number.length / 2).toLong().toString()
+            )
+        } else {
+            return listOf((number.toLong() * 2024L).toString())
+        }
     }
+
 }

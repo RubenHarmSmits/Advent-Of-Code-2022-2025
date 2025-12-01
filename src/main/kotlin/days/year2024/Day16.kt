@@ -3,173 +3,122 @@ package days.year2024
 import days.Day
 
 fun main() {
-    println(Day15().solve())
+    println(Day16().solve())
 }
 
+class Day16 : Day(16, 2024) {  //417 too low
 
-class Day15 : Day(15, 2024) {
+    data class Node(
+        val point: Point,
+        var options: MutableMap<Point, Pair<Int, List<Point>>> = mutableMapOf(),
+        var minimalCost: Pair<Int, List<Point>> = Int.MAX_VALUE to mutableListOf(),
+        var visited: Boolean = false
+    ) {}
 
-    val split = inputList.splitBy { it == "" }
-    val grid = matrixOfInput(split[0].map {
-        doubleLine(it)
-    }).toMutableMatrix()
-    val line = split[1].joinToString().filter { !" ,".contains(it) }
-
-    val boxes = mutableListOf<Point>()
-
-    fun doubleLine(line: String): String {
-        var newLine = ""
-        line.forEachIndexed { index, c ->
-            if (c == '#') newLine += "##"
-            if (c == 'O') newLine += "[]"
-            if (c == '.') newLine += ".."
-            if (c == '@') newLine += "@."
-        }
-        return newLine
-    }
+    val grid = matrixOfInput(inputList)
+    val turningPoints = mutableListOf<Node>()
+    val startingNode = Node(grid.findChar('S'))
+    val endNode = Node(grid.findChar('E'))
 
 
     fun solve(): Any {
-
-        println(line)
-
-        line.forEach { direction ->
-//            grid.print()
-//            println(direction)
-            val person = grid.findChar('@')
-            when (direction) {
-                'v' -> {
-                    val oneDown = grid[person.y + 1][person.x]
-                    if (oneDown == '.') {
-                        grid[person.y][person.x] = '.'
-                        grid[person.y + 1][person.x] = '@'
-                    } else if ("[]".contains(oneDown)) {
-                        var lines = mutableListOf(listOf(person.x))
-                        val other = person.x + if (oneDown == ']') -1 else 1
-                        lines.add(listOf(person.x, other).sorted())
-                        run loop@{
-                            (1..grid.size).forEach { dy ->
-                                val lastEntry = lines.last()
-                                if (grid[person.y + dy + 1].filterIndexed { i, char -> lastEntry.contains(i) && char == '#' }.isNotEmpty()) return@loop
-                                if (grid[person.y + dy + 1].filterIndexed { i, char -> lastEntry.contains(i) && char == '.' }.size == lastEntry.size) {
-                                    // move all up
-                                    lines.reversed().forEachIndexed { i, line ->
-                                        val yoflast = person.y + lines.size - 1 - i
-                                        line.forEach { x ->
-                                            grid[yoflast + 1][x] = grid[yoflast][x]
-                                            grid[yoflast][x] = '.'
-                                        }
-                                    }
-                                    return@loop
-                                } else {
-                                    val newLine = mutableSetOf<Int>()
-                                    // add new line
-                                    lastEntry.forEach { x ->
-                                        val oneDownbox = grid[person.y + lines.size][x]
-                                        if (oneDownbox == '[') {
-                                            newLine.add(x)
-                                            newLine.add(x + 1)
-                                        }
-                                        if (oneDownbox == ']') {
-                                            newLine.add(x)
-                                            newLine.add(x - 1)
-                                        }
-                                    }
-                                    lines.add(newLine.toList())
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-                '^' -> {
-                    val oneUp = grid[person.y - 1][person.x]
-                    if (oneUp == '.') {
-                        grid[person.y][person.x] = '.'
-                        grid[person.y - 1][person.x] = '@'
-                    } else if ("[]".contains(oneUp)) {
-                        var lines = mutableListOf(listOf(person.x))
-                        val other = person.x + if (oneUp == ']') -1 else 1
-                        lines.add(listOf(person.x, other).sorted())
-                        run loop@{
-                            (1..grid.size).forEach { dy ->
-                                val lastEntry = lines.last()
-                                if (grid[person.y - dy - 1].filterIndexed { i, char -> lastEntry.contains(i) && char == '#' }
-                                        .isNotEmpty()) return@loop
-                                if (grid[person.y - dy - 1].filterIndexed { i, char -> lastEntry.contains(i) && char == '.' }.size == lastEntry.size) {
-                                    // move all up
-                                    lines.reversed().forEachIndexed { i, line ->
-                                        val yoflast = person.y - lines.size + 1 + i
-                                        line.forEach { x ->
-                                            grid[yoflast - 1][x] = grid[yoflast][x]
-                                            grid[yoflast][x] = '.'
-                                        }
-                                    }
-                                    return@loop
-                                } else {
-                                    val newLine = mutableSetOf<Int>()
-                                    // add new line
-                                    lastEntry.forEach { x ->
-                                        val oneUpbox = grid[person.y - lines.size][x]
-                                        if (oneUpbox == '[') {
-                                            newLine.add(x)
-                                            newLine.add(x + 1)
-                                        }
-                                        if (oneUpbox == ']') {
-                                            newLine.add(x)
-                                            newLine.add(x - 1)
-                                        }
-                                    }
-                                    lines.add(newLine.toList())
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-                '>' -> {
-                    val sub = grid[person.y].subList(person.x, grid[0].size)
-                    val indexFirstWall = sub.indexOf('#')
-                    val indexFirstFree = sub.indexOf('.')
-                    if (indexFirstFree != -1 && indexFirstWall > indexFirstFree) {
-                        grid[person.y][person.x] = '.'
-                        grid[person.y][person.x + indexFirstFree] = '['
-                        (person.x..person.x + indexFirstFree).forEach { x ->
-                            if (grid[person.y][x] == '[') grid[person.y][x] = ']'
-                            else if (grid[person.y][x] == ']') grid[person.y][x] = '['
-                        }
-                        grid[person.y][person.x + 1] = '@'
-                    }
-                }
-
-                '<' -> {
-                    val sub = grid[person.y].subList(0, person.x + 1).reversed()
-                    val indexFirstWall = sub.indexOf('#')
-                    val indexFirstFree = sub.indexOf('.')
-                    if (indexFirstFree != -1 && indexFirstWall > indexFirstFree) {
-                        grid[person.y][person.x] = '.'
-                        grid[person.y][person.x - indexFirstFree] = ']'
-                        (0..indexFirstFree).forEach { x ->
-                            if (grid[person.y][person.x - x] == '[') grid[person.y][person.x - x] = ']'
-                            else if (grid[person.y][person.x - x] == ']') grid[person.y][person.x - x] = '['
-                        }
-                        grid[person.y][person.x - 1] = '@'
-                    }
-                }
-            }
-        }
-
-        grid.print()
-
+        turningPoints.add(startingNode)
+        turningPoints.add(endNode)
         grid.indices.forEach { y ->
-            grid[0].indices.forEach { x ->
-                if (grid[y][x] == '[') boxes.add(Point(y, x))
+            grid.indices.forEach { x ->
+                if (grid[y][x] == '.' && grid.getAdjacentCoordinates(y, x).filter { grid.get(it) == '.' }.size > 2) {
+                    turningPoints.add(Node(Point(y, x)))
+                }
             }
         }
-        return boxes.sumOf { it.y * 100 + it.x }
+
+        turningPoints.forEach { point ->
+            findOptions(point)
+        }
+        dijkstra()
+        return answer.size + 1
     }
 
+
+    var answer: MutableSet<Point> = mutableSetOf()
+    val max = 75416
+
+    private fun dijkstra() {
+        startingNode.minimalCost = 0 to startingNode.minimalCost.second.toMutableList()
+        while (turningPoints.any { !it.visited }) {
+            val smallest = turningPoints.filter { !it.visited }.minByOrNull { it.minimalCost.first }!!
+            smallest.visited = true
+            smallest.options.forEach { optionScore ->
+                val option = findNode(optionScore.key)
+
+                val currentLowest = option.minimalCost.first
+                val currentScore = smallest.minimalCost.first + optionScore.value.first
+
+                if (currentScore == currentLowest) {
+                    option.minimalCost =
+                        currentScore to (optionScore.value.second + smallest.minimalCost.second + option.minimalCost.second)
+                }
+                if (currentScore < currentLowest) {
+                    option.minimalCost =
+                        currentScore to (smallest.minimalCost.second + optionScore.value.second).toMutableList()
+                }
+                if (option == endNode && option.minimalCost.first == max) {
+                    println(option.minimalCost.second)
+                    answer += option.minimalCost.second
+                }
+
+            }
+        }
+    }
+
+    private fun findNode(point: Point): Node {
+        return turningPoints.find { it.point == point } ?: throw Exception("Not found")
+    }
+
+    private fun findOptions(node: Node) {
+        val neighbors = grid.getAdjacentCoordinates(node.point).filter { grid.get(it) == '.' }
+        neighbors.forEach {
+            traverse(calculateDirection(node.point, it), node, it, 1, mutableListOf(), mutableSetOf())
+        }
+    }
+
+    private fun traverse(
+        direction: Direction,
+        startNode: Node,
+        point: Point,
+        score: Int,
+        mem: MutableList<String>,
+        steps: MutableSet<Point>
+    ) {
+        val hash = "$direction $point"
+        if (mem.contains(hash)) return
+        mem.add(hash)
+        steps.add(point)
+        val turningPoint = turningPoints.find { it.point == point }
+        val iamturningpoint = turningPoint != null
+        if (turningPoint != null) {
+            val temp = startNode.options[turningPoint.point]
+            val currentScore = temp?.first ?: (score + 1000)
+            if (currentScore > score + 100) {
+                startNode.options[turningPoint.point] = score + 1000 to steps.toMutableList()
+            }
+        }
+        val neighbors = grid.getAdjacentCoordinates(point).filter { ".ES".contains(grid.get(it)) }
+        neighbors.forEach { neighbour ->
+            val newDirection = calculateDirection(point, neighbour)
+            if (!directionIsOpposite(newDirection, direction)) {
+                if (!(iamturningpoint && isTurn(point, neighbour, direction))) {
+                    traverse(
+                        newDirection,
+                        startNode,
+                        neighbour,
+                        score + 1 + if (isTurn(point, neighbour, direction)) 1000 else 0,
+                        mem,
+                        steps.toMutableSet()
+                    )
+                }
+            }
+        }
+    }
 
 }

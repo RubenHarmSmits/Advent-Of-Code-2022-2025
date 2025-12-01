@@ -1,43 +1,71 @@
 package days.year2024
 
 import days.Day
+import kotlin.math.abs
 
 fun main() {
-    println(Day13().solve())
+    println(Day14().solve())
 }
 
-class Day13 : Day(13, 2024) {
+val maxx = 101
 
-    data class Machine(
-        val buttonA: PointL,
-        val buttonB: PointL,
-        val price: PointL,
-    )
 
-    private val machines = inputList.splitBy { it == "" }.map {
-        val (xa, ya) = extraxtAllLongsFromString(it[0])
-        val (xb, yb) = extraxtAllLongsFromString(it[1])
-        val (xp, yp) = extraxtAllLongsFromString(it[2])
-        Machine(PointL(xa, ya), PointL(xb, yb), PointL(xp + 10000000000000, yp + 10000000000000))
+class Day14 : Day(14, 2024) { //217893888 too high
+
+    data class Robot(val position: Point, val velocity: Point) {
+        val maxy = 103
+        val maxx = 101
+
+        fun move(steps: Int) {
+            this.position.x = checkPosition(this.position.x, velocity.x, maxx, steps)
+            this.position.y = checkPosition(this.position.y, velocity.y, maxy, steps)
+        }
+
+        private fun checkPosition(position: Int, velocity: Int, max: Int, steps: Int): Int {
+            val newPosition = position + (velocity * steps)
+            if (newPosition < 0) {
+                if (abs(newPosition) % max == 0) return 0
+                else return max - (abs(newPosition) % max)
+            }
+            if (newPosition >= max) return newPosition % max
+            return newPosition
+        }
     }
 
-    fun solve(): Any {
-        return machines.sumOf { checkScore(it) }
+    val robots = inputList.map { line ->
+        val (px, py, vx, vy) = extraxtAllIntsFromStringIncludingNegative(line)
+        Robot(Point(py, px), Point(vy, vx))
     }
 
-    private fun checkScore(machine: Machine): Long {
-        val ay = machine.buttonA.y
-        val ax = machine.buttonA.x
-        val by = machine.buttonB.y
-        val bx = machine.buttonB.x
-        val py = machine.price.y
-        val px = machine.price.x
 
-        val nb = (ay * px - ax * py) / (ay * bx - ax * by)
-        val na = (by * px - bx * py) / (by * ax - bx * ay)
-        println("nb=$nb na=$na")
-        return if (ay * na + by * nb == py && ax * na + bx * nb == px) 3L * na + nb else 0L
+    fun solve(): Any { //7309  <--> 17712
 
+        var move = 99
+        robots.forEach { it.move(move) }
+        printRobots()
+        val steps = 103
+        repeat(75) {
+            println(it)
+            robots.forEach { it.move(steps) }
+            printRobots()
+            move+=steps
+            println(move)
+
+        }
+        return 0
     }
+
+    fun printRobots() {
+            (22 until 55).forEach { y ->
+                repeat(maxx) { x ->
+                    val num = robots.count { it.position.y == y && it.position.x == x }
+                    if (num == 0) print('.') else print(num)
+                }
+                println()
+            }
+        println()
+        println()
+    }
+
 
 }

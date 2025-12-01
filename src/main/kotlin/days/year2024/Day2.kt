@@ -1,41 +1,37 @@
-package days.year2023
+package days.year2024
 
 import days.Day
-import kotlin.math.*
+import kotlin.math.abs
 
 fun main() {
     println(Day2().solve())
 }
 
-class Day2 : Day(2, 2023) {
-
-    val a = 3 to 5
-
+class Day2 : Day(2, 2024) {
 
     fun solve(): Any {
-        return inputList.map {
-            var numbers = it.split(": ")[1];
-            var games = numbers.split("; ")
-            var maxBlue=0
-            var maxGreen=0
-            var maxRed=0
-            games.forEach {
-                val spl = it.replace(",", "").split(" ")
-                spl.chunked(2).forEach {
-                    val (num, col) = it
-                    if(col=="red"){
-                        maxRed = max(maxRed, num.toInt())
-                    }
-                    if(col=="blue"){
-                        maxBlue = max(maxBlue, num.toInt())
-                    }
-                    if(col=="green"){
-                        maxGreen = max(maxGreen, num.toInt())
-                    }
+        return inputList
+            .map{it.split(" ").ints()}
+            .filter{ list ->
+                list.indices.any {
+                    val copy = list.toMutableList()
+                    copy.removeAt(it)
+                    reportIsSafe(copy)
                 }
-            }
-            maxBlue* maxGreen*maxRed
-        }.sum()
+        }.size
+    }
+
+    private fun reportIsSafe(list: List<Int>): Boolean {
+        val first = list[1] - list[0]
+        var previous = list[0]
+        val ans = list.drop(1).all{
+            if(!areBothPositiveOrNegative(it-previous,first)) return@all false
+            val ab = abs(it-previous)
+            if(ab>3||ab<0) return@all false
+            previous = it
+            return@all true;
+        }
+        return ans
     }
 
 

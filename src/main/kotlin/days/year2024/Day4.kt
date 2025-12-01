@@ -3,41 +3,55 @@ package days.year2024
 import days.Day
 
 fun main() {
-    println(Day3().solve())
+    println(Day4().solve())
 }
 
-class Day3 : Day(3, 2024) {
+class Day4 : Day(4, 2024) {
 
-    var enabled: Boolean = true
+    val grid = matrixOfInput(inputList)
+    var total =0
+
+    val a = listOf(3,4,5).count{it==3}
 
     fun solve(): Any {
-        println(inputString)
-        return inputString.indices.sumOf {
-            checkScore(inputString.substring(it))
+        grid.indices.forEach { y->
+            grid[0].indices.forEach { x->
+                checkXmas(Point(y,x))
+            }
         }
+        return total
     }
 
-    private fun checkScore(line: String): Int {
+    private fun checkXmas(point: Point): Int {
+        if(grid.get(point)!='A') return 0
         try {
-            if(line.substring(0,4)=="do()") enabled=true
-            if(line.substring(0,7)=="don't()") enabled=false
-            if(line.substring(0,4)!="mul(") return 0
-            val num1 = extractFirstNumber(line.substring(4))
-            val lennum1 = num1.length
-            val num2 = extractFirstNumber(line.substring(4+lennum1+1))
-            val lennum2 = num2.length
-            if(line[lennum1+lennum2+5]!=')') return 0
-            return if (enabled) (num1.toInt() * num2.toInt()) else 0
+            val first = "${grid.get(Point(point.y-1, point.x+1))} + ${grid.get(Point(point.y+1, point.x-1))}"
+            val second = "${grid.get(Point(point.y+1, point.x+1))} + ${grid.get(Point(point.y-1, point.x-1))}"
+            if(first.contains('M')&&first.contains('S')&&second.contains('M')&&second.contains('S')) total+=1
+        } catch (e: Exception) {
+            return 0
+        }
+
+        return 0
+
+    }
+
+    private fun checkLetter(letterInt: Int, point: Point, direction: Point): Int {
+        val newpoint = Point(direction.y + point.y,direction.x + point.x)
+
+        try {
+            val letter = grid[newpoint.y][newpoint.x]
+            when(letterInt){
+                1 -> if(letter != 'M') return 0
+                2 -> if(letter != 'A') return 0
+                3 -> return if(letter != 'S') 0 else 1
+            }
+            return checkLetter(letterInt+1, newpoint, direction)
+
         } catch (e: Exception){
             return 0
         }
 
-    }
-
-    fun extractFirstNumber(input: String): String {
-        val regex = Regex("^\\d+")
-        val matchResult = regex.find(input)
-        return matchResult?.value ?: throw Exception("Invalid input")
     }
 
 

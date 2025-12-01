@@ -1,62 +1,83 @@
 package days.year2024
 
 import days.Day
-import org.jgrapht.alg.clique.BronKerboschCliqueFinder
-import org.jgrapht.graph.DefaultEdge
-import org.jgrapht.graph.SimpleGraph
+import java.lang.Long.toBinaryString
 
 fun main() {
-    println(Day23().solve())
+    println(Day24().solve())
 }
 
-class Day23 : Day(23, 2024) {
+class Day24 : Day(24, 2024) {
 
-    class Computer(val name: String, val connected: MutableList<Computer> = mutableListOf())
+    private val input = inputList.splitBy { it == "" }
 
-    var computers = mutableListOf<Computer>()
+    data class Wire(
+        val name: String,
+        var value: Boolean? = null,
+        val inputNameFirst: String? = null,
+        val inputNameSecond: String? = null,
+        var done: Boolean = false,
+        val operation: String? = null
+    )
+
+    private val wires = mutableListOf<Wire>().apply {
+        addAll(input[0].map { line ->
+            val (name, value) = line.split(": ")
+            Wire(name, value == "1", done = true)
+        })
+    }
 
     fun solve(): Any {
-        val list = inputList.map { it.split("-").let { Pair(it[0], it[1])  } }
-        list.forEach {
-            computers.add(Computer(it.first))
-            computers.add(Computer(it.second))
+        parseInstructions()
+        while (wires.any { !it.done }) {
+            processWires()
         }
+        val numx = getNumberOfWires("x", wires)
+        val numy = getNumberOfWires("y", wires)
+        val numz = getNumberOfWires("z", wires)
+        println("x: $numx, y: $numy, x+y: ${numx+numy} z: $numz")
+        println("${toBinaryString(numx+numy)} answer should be")
+        println("${toBinaryString(numz)} answer is")
+        return "qnf,vpm,tbt,gsd,kth,z32,z26,z12".split(",").sorted().joinToString(",")
+    }
 
-        computers = computers.distinctBy { it.name }.toMutableList()
+    fun getNumberOfWires(type: String, wires: List<Wire>): Long {
+        return wires
+            .filter { it.name.startsWith(type) }
+            .sortedByDescending { it.name }
+            .joinToString(separator = "") { if (it.value == true) "1" else "0" }
+            .also{println(it)}
+            .toLong(2)
+    }
 
-        list.forEach { item ->
-            val f = computers.find { it.name == item.first }!!
-            val s = computers.find { it.name == item.second }!!
-            f.connected.add(s)
-            s.connected.add(f)
+    private fun parseInstructions() {
+        input[1].forEach { instruction ->
+            val (first, operation, second, _, destination) = instruction.split(" ")
+            wires.add(Wire(destination, null, first, second, operation = operation))
         }
+    }
 
-
-        val graph = SimpleGraph<String, DefaultEdge>(DefaultEdge::class.java)
-
-
-
-        computers.forEach {computer ->
-            computer.connected.forEach { connectedComputer ->
-                graph.addVertex(computer.name)
-                graph.addVertex(connectedComputer.name)
-                graph.addEdge(connectedComputer.name, computer.name)
+    private fun processWires() {
+        wires.filter { !it.done }.forEach { wire ->
+            val firstWire = wires.find { it.name == wire.inputNameFirst }
+            val secondWire = wires.find { it.name == wire.inputNameSecond }
+            if (firstWire?.value != null && secondWire?.value != null) {
+                wire.value = calculate(firstWire.value!!, secondWire.value!!, wire.operation!!)
+                wire.done = true
             }
         }
-
-        val finder: BronKerboschCliqueFinder<String, DefaultEdge> = BronKerboschCliqueFinder(graph)
-        finder.maximumIterator().forEach { println(it) }
-
-        return computers.combinations(3).filter { combinationIsCorrect(it) }.size
     }
 
-    fun combinationIsCorrect(combination: List<Computer>): Boolean {
-        val (first, second, third) = combination
-        return first in second.connected && first in third.connected &&
-                second in first.connected && second in third.connected &&
-                third in first.connected && third in second.connected &&
-                (first.name.startsWith("t")||second.name.startsWith("t")||third.name.startsWith("t"))
+    private fun calculate(first: Boolean, second: Boolean, operation: String): Boolean {
+        return when (operation) {
+            "AND" -> first && second
+            "OR" -> first || second
+            "XOR" -> first != second
+            else -> throw IllegalArgumentException("Unrecognized operation: $operation")
+        }
     }
 
-
+    fun getWireValue(name: String): Boolean? {
+        return wires.find { it.name == name }?.value
+    }
 }

@@ -3,30 +3,55 @@ package days.year2024
 import days.Day
 
 fun main() {
-    println(Day7().solve())
+    println(Day8().solve())
 }
 
-class Day7 : Day(7, 2024) {
+class Day8 : Day(8, 2024) {
+
+    val grid = matrixOfInput(inputList)
+    val antennes = grid.flatten().toSet().filter { it != '.' }
+    val antinodes = mutableSetOf<Point>()
 
     fun solve(): Any {
-        return inputList.filter { isPossible(it) }.sumOf { it.split(':')[0].toLong() }
+        println(antennes)
+
+        antennes.forEach { antenne ->
+            checkAntenne(antenne)
+        }
+
+        return antinodes.size
     }
 
-    private fun isPossible(line: String): Boolean {
-        val (value, num) = line.split(':')
-        val numbers = num.substring(1).split(' ').ints()
-        var expressions = mutableListOf(numbers[0].toLong())
-        for (i in numbers.dropLast(1).indices) {
-            val newExpression = mutableListOf<Long>()
-            expressions.forEach {
-                newExpression.add(it + numbers[i + 1])
-                newExpression.add(it * numbers[i + 1])
-                newExpression.add((it.toString() + numbers[i + 1].toString()).toLong())
+    private fun checkAntenne(antenne: Char) {
+        val locations = mutableListOf<Point>()
+        grid.indices.forEach { y ->
+            grid[0].indices.forEach { x ->
+                if(grid[y][x]==antenne){
+                    locations.add(Point(y, x))
+                    antinodes.add(Point(y, x))
+                }
             }
-            expressions = newExpression
         }
-        return expressions.any {
-            it == value.toLong()
+
+        locations.combinations(2).forEach { (first,second) ->
+            val dy = first.y-second.y
+            val dx = first.x-second.x
+            var factor1 =1
+            while(true){
+                val antinode1 = Point(first.y+(dy*factor1), first.x+(dx*factor1))
+                if(grid.containsPoint(antinode1)) antinodes.add(antinode1)
+                else break
+                factor1+=1
+            }
+            var factor2 =1
+
+            while(true){
+                val antinode1 = Point(first.y-(dy*factor2), first.x-(dx*factor2))
+                if(grid.containsPoint(antinode1)) antinodes.add(antinode1)
+                else break
+                factor2+=1
+            }
         }
     }
+
 }

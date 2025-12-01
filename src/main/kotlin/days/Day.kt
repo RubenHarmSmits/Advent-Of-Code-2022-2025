@@ -1,11 +1,12 @@
 package days
 
-import java.lang.IllegalArgumentException
-import java.util.*
 import util.InputReader
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.util.LinkedList
+import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.pow
 
 typealias Matrix<T> = List<List<T>>
 typealias MutableMatrix<T> = MutableList<MutableList<T>>
@@ -13,9 +14,17 @@ typealias MutableMatrix<T> = MutableList<MutableList<T>>
 
 abstract class Day(dayNumber: Int, year: Int = 2022) {
 
+    data class Node(
+        val point: Point,
+        var options: MutableList<Point> = mutableListOf(),
+        var minimalCost: Int = Int.MAX_VALUE,
+        var visited: Boolean = false
+    )
+
 
     fun List<String>.ints(radix: Int = 10) = this.map { it.toInt(radix) }
     fun List<Int>.product() = this.reduce { acc, i -> acc * i }
+    fun List<Long>.product() = this.reduce { acc, i -> acc * i }
 
     fun List<Long>.closestValue(value: Long) = minBy { abs(value - it) }
 
@@ -56,8 +65,15 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
 
     data class Range(val begin: Int, val end: Int)
 
+
+
     fun extraxtAllIntsFromString(string: String): List<Int> {
         val regex = Regex("\\d+")
+        val resultList = regex.findAll(string).map { it.value }.toList().ints()
+        return resultList
+    }
+    fun extraxtAllIntsFromStringIncludingNegative(string: String): List<Int> {
+        val regex = Regex("-?\\d+")
         val resultList = regex.findAll(string).map { it.value }.toList().ints()
         return resultList
     }
@@ -68,7 +84,9 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
         return resultList
     }
 
-    fun isNumeric(str: String) = (str != "") && str.all { it in '0'..'9' }
+    fun isNumeric(str: String) = str.matches(Regex("-?\\d+"))
+    fun String.isNumber() = this.matches(Regex("-?\\d+"))
+    fun Char.isNumber() = this.toString().isNumber()
 
     enum class Direction {
         UP, DOWN, RIGHT, LEFT
@@ -82,7 +100,22 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
         return false
     }
 
-    data class Point(var y: Int, var x: Int) {
+    fun calculateDirection(begin: Point, end: Point): Direction {
+        if(begin.y>end.y) return Direction.UP
+        if(begin.y<end.y) return Direction.DOWN
+        if(begin.x<end.x) return Direction.RIGHT
+        if(begin.x>end.x) return Direction.LEFT
+        throw Exception("opeesei")
+    }
+
+    fun isTurn(begin: Point, end: Point, direction: Direction): Boolean {
+        val newDirection = calculateDirection(begin, end)
+        if(newDirection==direction||directionIsOpposite(newDirection, direction))return false
+        return true
+    }
+
+    data class Point(var y: Int, var x: Int): Comparable<Point> {
+
         fun move(direction: Any) {
             when (direction) {
                 'D', 'v', Direction.DOWN -> this.y++
@@ -91,6 +124,10 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
                 'R', '>', Direction.RIGHT -> this.x++
                 else -> throw IllegalArgumentException("$direction is not a valid direction")
             }
+        }
+
+        override fun compareTo(other: Point): Int {
+            return compareValuesBy(this, other, Point::y, Point::x)
         }
     }
 
@@ -126,9 +163,39 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
     fun <T> Matrix<T>.getRowNum(): Int = this.size
     fun <T> Matrix<T>.transposed(times: Int = 1): Matrix<T> = transposeMatrix(this, times)
     fun <T> emptyMatrixOf(rows: Int, columns: Int, default: T) = MutableList(rows) { MutableList(columns) { default } }
-    fun <T> Matrix<T>.count(predicate: (T) -> Boolean) = this.sumOf { it.count(predicate) }
+//    fun <T> Matrix<T>.count(predicate: (T) -> Boolean) = this.sumOf { it.count(predicate) }
     fun <T> Matrix<T>.getAdjacent(row: Int, col: Int): List<T> =
             this.getAdjacentCoordinates(row, col).map { it -> this[it.y][it.x] }
+    fun <T> Matrix<T>.getAdjacent(point: Point): List<T> =
+        this.getAdjacentCoordinates(point.y, point.x).map { it -> this[it.y][it.x] }
+
+    fun <T> Matrix<T>.containsPoint(point: Point): Boolean {
+        if(point.x < 0 || point.y < 0) return false
+        if(point.y>=this.size)return false
+        if(point.x>=this[0].size)return false
+        return true;
+    }
+
+
+
+    fun <T> Matrix<T>.findChar(char: Char): Point {
+        this.indices.forEach { y ->
+            this[0].indices.forEach { x ->
+                if (this[y][x] == char) return Point(y, x)
+            }
+        }
+        throw Exception("Could not find $char")
+    }
+
+    fun <T> Matrix<T>.findAll(predicate : (T) -> Boolean): List<Point> {
+        val list = mutableListOf<Point>()
+        this.indices.forEach { y ->
+            this[0].indices.forEach { x ->
+                if (predicate(this[y][x])) list.add(Point(y, x))
+            }
+        }
+        return list
+    }
 
     fun <T> Matrix<T>.getAdjacentCoordinates(row: Int, col: Int): List<Point> {
         val adjacent = mutableListOf<Point>()
@@ -236,28 +303,21 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
 
     fun reverseColumns(matrix: MutableList<MutableList<Char>>): MutableList<MutableList<Char>> {
         val SIZE = matrix.size
-
-
         for (x in 0 until SIZE) {
             val temp = matrix.map { it[x] }.reversed()
             for (y in 0 until SIZE) {
                 matrix[y][x] = temp[y]
             }
         }
-
         return matrix
     }
 
     fun rotateMatrixCLockwise(matrix: Matrix<Char>, amount: Int): Matrix<Char> {
-
         var rotatedMatrix: MutableMatrix<Char> = matrix.toMutableMatrix();
         repeat(amount) {
             val rows = rotatedMatrix.size
             val cols = rotatedMatrix[0].size
-
-            // Create a new matrix with swapped rows and columns
             val newRotatedMatrix = MutableList(cols) { MutableList(rows) { ' ' } }
-
             for (i in 0 until rows) {
                 for (j in 0 until cols) {
                     newRotatedMatrix[j][rows - 1 - i] = rotatedMatrix[i][j]
@@ -265,7 +325,22 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
             }
             rotatedMatrix = newRotatedMatrix
         }
+        return rotatedMatrix
+    }
 
+    fun rotateBooleanMatrixCLockwise(matrix: Matrix<Boolean>, amount: Int): Matrix<Boolean> {
+        var rotatedMatrix: MutableMatrix<Boolean> = matrix.toMutableMatrix();
+        repeat(amount) {
+            val rows = rotatedMatrix.size
+            val cols = rotatedMatrix[0].size
+            val newRotatedMatrix = MutableList(cols) { MutableList(rows) { false } }
+            for (i in 0 until rows) {
+                for (j in 0 until cols) {
+                    newRotatedMatrix[j][rows - 1 - i] = rotatedMatrix[i][j]
+                }
+            }
+            rotatedMatrix = newRotatedMatrix
+        }
         return rotatedMatrix
     }
 
@@ -299,6 +374,7 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
 
 
     data class Point3(val y: Int, val x: Int, val z: Int)
+    data class Point3L(var y: Long, var x: Long, var z: Long)
     data class Cube(val y: Int, val x: Int, val z: Int)
 
     fun String.hexToBinaryString(): String {
@@ -326,6 +402,20 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
         }
         return binary
     }
+
+
+    fun perm(input: String): List<String> {
+        if (input.isEmpty()) return listOf("")
+        val result = mutableListOf<String>()
+        input.forEachIndexed { index, char ->
+            val remaining = input.removeRange(index, index + 1)
+            perm(remaining).forEach { permutation ->
+                result.add(char + permutation)
+            }
+        }
+        return result
+    }
+
 
     fun <E> permutations(list: List<E>, length: Int? = null): Sequence<List<E>> = sequence {
         val n = list.size
@@ -407,10 +497,19 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
         return result
     }
 
+    fun <T> List<T>.indexOfSubList(subList: List<T>): Int {
+        if (subList.isEmpty() || this.size < subList.size) return -1
+        return (0..this.size - subList.size).firstOrNull { this.subList(it, it + subList.size) == subList } ?: -1
+    }
+
 
     // sum of x eg 10 + 9 + 8 + 7 .. + 1
     fun summation(x: Long): Long{
         return x * (x + 1L) / 2L
+    }
+
+    fun summation(x: Int): Int{
+        return x * (x + 1) / 2
     }
 
     // find lcm of a list of longs eg [3,4,6] = 12
@@ -421,15 +520,23 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
         }
         return result
     }
-
-    // find the gcd of 2 long's
-    fun greatestCommonDevisor(a: Long, b: Long): Long = if (b == 0L) a else greatestCommonDevisor(b, a % b)
-
     // Function to calculate the least common multiple (LCM) of 2 longs
     fun leastCommonMultiple(a: Long, b: Long): Long = abs(a * b) / greatestCommonDevisor(a, b)
 
+    // find the GCD of 2 long's
+    fun greatestCommonDevisor(a: Long, b: Long): Long = if (b == 0L) a else greatestCommonDevisor(b, a % b)
+
+
     operator fun <T> List<T>.component6(): T = get(5)
     operator fun <T> List<T>.component7(): T = get(6)
+    operator fun <T> List<T>.component8(): T = get(7)
+    operator fun <T> List<T>.component9(): T = get(8)
+    operator fun <T> List<T>.component10(): T = get(9)
+    operator fun <T> List<T>.component11(): T = get(10)
+    operator fun <T> List<T>.component12(): T = get(11)
+    operator fun <T> List<T>.component13(): T = get(12)
+    operator fun <T> List<T>.component14(): T = get(13)
+    operator fun <T> List<T>.component15(): T = get(14)
 
 
     fun intersectRanges(range1: LongRange, range2: LongRange): LongRange? {
@@ -491,6 +598,68 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
         }
         return outersects
     }
+
+    fun areStraightNeighbors(point1: Point, point2: Point): Boolean {
+        val xDifference = Math.abs(point1.x - point2.x)
+        val yDifference = Math.abs(point1.y - point2.y)
+        // Check if points are adjacent along the x-axis or y-axis (not diagonally)
+        return (xDifference == 1 && yDifference == 0) ||   // Adjacent along x-axis
+                (xDifference == 0 && yDifference == 1)      // Adjacent along y-axis
+    }
+    fun areBothPositiveOrNegative(a: Int, b: Int): Boolean {
+        return (a > 0 && b > 0) || (a < 0 && b < 0)
+    }
+
+    fun swapInts(list: MutableList<Int>, int1: Int, int2: Int):MutableList<Int> {
+        val index1 = list.indexOf(int1)
+        val index2 = list.indexOf(int2)
+        val temp = list[index1]
+        list[index1] = list[index2]
+        list[index2] = temp
+        return list
+    }
+
+    /**
+     * Integer power using [Double.pow]
+     */
+    infix fun Int.`**`(exponent: Int): Int = toDouble().pow(exponent).toInt()
+
+    /**
+     * Long power using [Double.pow]
+     * Note: it may be preferable to use a BigInteger instead of toDouble()
+     * to prevent a loss of precision - use whichever makes sense
+     * for the number you have at hand, and the precision you need.
+     */
+    infix fun Long.`**`(exponent: Int): Long = toDouble().pow(exponent).toLong()
+    infix fun Long.`**`(exponent: Long): Long = toDouble().pow(exponent.toInt()).toLong()
+// infix fun Long.`**`(exponent: Int): Long = toBigInteger().pow(exponent).toLong()
+
+    /**
+     * Double power using [Double.pow]
+     */
+    infix fun Float.`**`(exponent: Int) : Float = this.pow(exponent)
+
+    /**
+     * Float power using [Float.pow]
+     */
+    infix fun Double.`**`(exponent: Int) : Double = this.pow(exponent)
+
+
+    fun <T> T.log(tag: String = ""): T {
+        println("$tag$this")
+        return this
+    }
+
+    // Helper function to generate all permutations/combinations of a list
+    fun <T> List<T>.permutations(): List<List<T>> {
+        if (size <= 1) return listOf(this)
+        return flatMap { element ->
+            (this - element).permutations().map { listOf(element) + it }
+        }
+    }
+
+
+
 
 
 }

@@ -33,9 +33,7 @@ class Day12 : Day(12, 2016) {
                 "dec"-> getRegisterByName(list[1]).amount--
                 "cpy"-> getRegisterByName(list[2]).amount = getValue(list[1])
                 "jnz"-> {
-                    i--
-                    if(getValue(list[1])!=0) i += list[2].toInt()
-                    else i++
+                    if(getValue(list[1])!=0) i += list[2].toInt()-1
                 }
             }
         }

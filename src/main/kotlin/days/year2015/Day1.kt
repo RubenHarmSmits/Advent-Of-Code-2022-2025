@@ -14,7 +14,7 @@ class Day1: Day(1, 2023) {
 
     fun solve(): Any {
         var floor = 0;
-        var a = input.map { it }
+        input.map { it }
                 .forEachIndexed { i, it ->
                     if (it == '(') floor++
                     else floor--

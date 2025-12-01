@@ -55,9 +55,6 @@ class Day24 : Day(24, 2023) {
                 }
             }
         }
-
-
-
         return 0;
     }
 

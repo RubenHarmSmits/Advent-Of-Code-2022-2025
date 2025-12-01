@@ -1,62 +1,56 @@
 package days.year2024
 
 import days.Day
-import org.jgrapht.alg.clique.BronKerboschCliqueFinder
-import org.jgrapht.graph.DefaultEdge
-import org.jgrapht.graph.SimpleGraph
+import kotlin.math.max
 
 fun main() {
-    println(Day23().solve())
+    println(Day22().solve())
 }
 
-class Day23 : Day(23, 2024) {
-
-    class Computer(val name: String, val connected: MutableList<Computer> = mutableListOf())
-
-    var computers = mutableListOf<Computer>()
+class Day22 : Day(22, 2024) {
 
     fun solve(): Any {
-        val list = inputList.map { it.split("-").let { Pair(it[0], it[1])  } }
-        list.forEach {
-            computers.add(Computer(it.first))
-            computers.add(Computer(it.second))
+        val returns =  inputList.map {
+            getLastNumber(it.toLong())
         }
 
-        computers = computers.distinctBy { it.name }.toMutableList()
+        val differences = returns.map { getDifferce(it) }
 
-        list.forEach { item ->
-            val f = computers.find { it.name == item.first }!!
-            val s = computers.find { it.name == item.second }!!
-            f.connected.add(s)
-            s.connected.add(f)
-        }
+        var highest =0L
 
-
-        val graph = SimpleGraph<String, DefaultEdge>(DefaultEdge::class.java)
-
-
-
-        computers.forEach {computer ->
-            computer.connected.forEach { connectedComputer ->
-                graph.addVertex(computer.name)
-                graph.addVertex(connectedComputer.name)
-                graph.addEdge(connectedComputer.name, computer.name)
+        (-9L..9L).forEach { first ->
+            (-9L..9L).forEach { second ->
+                (-9L..9L).forEach { third ->
+                    (-9L..9L).forEach { fourth ->
+                        val profit = differences.mapIndexed { i,difference ->
+                            val index = difference.windowed(4).indexOf(listOf(first, second, third, fourth))
+                            if(index == -1) 0L else returns[i][index+3]
+                        }.sum()
+                        highest = max(highest, profit)
+                    }
+                }
             }
         }
-
-        val finder: BronKerboschCliqueFinder<String, DefaultEdge> = BronKerboschCliqueFinder(graph)
-        finder.maximumIterator().forEach { println(it) }
-
-        return computers.combinations(3).filter { combinationIsCorrect(it) }.size
+        return highest
     }
 
-    fun combinationIsCorrect(combination: List<Computer>): Boolean {
-        val (first, second, third) = combination
-        return first in second.connected && first in third.connected &&
-                second in first.connected && second in third.connected &&
-                third in first.connected && third in second.connected &&
-                (first.name.startsWith("t")||second.name.startsWith("t")||third.name.startsWith("t"))
+    fun getLastNumber(n: Long): List<Long>  = (0..2000).toList().map { output(n,it) % 10 }
+    fun getDifferce(last: List<Long>)= last.mapIndexed { i, number -> if (i==0) 0 else number - last[i-1] }
+    fun mix(first : Long, second: Long) = first xor second
+    fun prune(first : Long) = first % 16777216L
+    fun proces(s: Long): Long {
+        var secret = s
+        secret = prune(mix(secret * 64L, secret))
+        secret = prune(mix(secret / 32L, secret))
+        secret = prune(mix(secret * 2048L, secret))
+        return secret
     }
 
-
+    fun output(s: Long, n: Int): Long{
+        var secret = s
+        repeat(n){
+            secret = proces(secret)
+        }
+        return secret
+    }
 }
