@@ -14,16 +14,10 @@ class Day2 : Day(2, 2025) {
             .map { it.split("-").map { it.toLong() } }
             .sumOf { (first, second) ->
                 (first..second).sumOf { i ->
-                    if (isInvalid(i.toString())) i else 0
+                    if ((1..(i.toString().length / 2)).any {
+                            i.toString().length % it == 0 && i.toString().chunked(it).toSet().size == 1
+                        }) i else 0
                 }
             }
-    }
-
-    fun isInvalid(num: String): Boolean {
-        val l = num.length
-        for (n in 1..(l / 2)) {
-            if (l % n == 0 && num.chunked(n).toSet().size == 1) return true
-        }
-        return false
     }
 }
