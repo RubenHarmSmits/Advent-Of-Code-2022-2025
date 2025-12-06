@@ -32,4 +32,3 @@ class Day5 : Day(5, 2025) {
         return intersectedRanges.sumOf { it.last + 1 - it.first }
     }
 }
-
