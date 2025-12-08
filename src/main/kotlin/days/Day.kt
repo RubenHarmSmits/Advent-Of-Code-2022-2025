@@ -139,8 +139,16 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
         return abs(p1[0] - p2[1]) + abs(p1[0] - p2[1]) + abs(p1[0] - p2[1])
     }
 
+    fun manhattanDistance3(p1: Point3, p2: Point3): Int {
+        return abs(p1.x - p2.x) +abs(p1.y - p2.y) + abs(p1.z - p2.z)
+    }
+
     fun manhattanDistance(p1: PointL, p2: PointL): Long {
         return abs(p1.x - p2.x) + abs(p1.y - p2.y)
+    }
+
+    fun straightDistance3(p1: Point3L, p2: Point3L): Long {
+        return (abs(p1.x - p2.x).`**`(2) +abs(p1.y - p2.y).`**`(2) + abs(p1.z - p2.z).`**`(2)).`**`(1.0/2.0)
     }
 
 
@@ -624,6 +632,9 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
      */
     infix fun Int.`**`(exponent: Int): Int = toDouble().pow(exponent).toInt()
 
+    infix fun Int.`**`(exponent: Double): Int = toDouble().pow(exponent).toInt()
+
+
     /**
      * Long power using [Double.pow]
      * Note: it may be preferable to use a BigInteger instead of toDouble()
@@ -631,6 +642,7 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
      * for the number you have at hand, and the precision you need.
      */
     infix fun Long.`**`(exponent: Int): Long = toDouble().pow(exponent).toLong()
+    infix fun Long.`**`(exponent: Double): Long = toDouble().pow(exponent).toLong()
     infix fun Long.`**`(exponent: Long): Long = toDouble().pow(exponent.toInt()).toLong()
 // infix fun Long.`**`(exponent: Int): Long = toBigInteger().pow(exponent).toLong()
 
@@ -638,6 +650,9 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
      * Double power using [Double.pow]
      */
     infix fun Float.`**`(exponent: Int) : Float = this.pow(exponent)
+
+    infix fun Float.`**`(exponent: Float) : Float = this.pow(exponent)
+
 
     /**
      * Float power using [Float.pow]

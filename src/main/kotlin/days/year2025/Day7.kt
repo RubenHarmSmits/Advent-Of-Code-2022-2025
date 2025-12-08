@@ -19,10 +19,8 @@ class Day7 : Day(7, 2025) {
     }
 
     fun checkScore(p: Point): Long = when {
-        (p.y == grid.size - 1) -> 1L
+        p.y == grid.size - 1 -> 1L
         grid.get(p) == '^' -> check(Point(p.y + 1, p.x + 1)) + check(Point(p.y + 1, p.x - 1))
         else -> check(Point(p.y + 1, p.x))
     }
-
-
 }
