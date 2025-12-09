@@ -48,8 +48,6 @@ class Day8 : Day(8, 2025) {
             if(circuits.size == 1){
                 return closestF.p.x * closestS.p.x
             }
-
         }
     }
-
 }

@@ -148,7 +148,7 @@ abstract class Day(dayNumber: Int, year: Int = 2022) {
     }
 
     fun straightDistance3(p1: Point3L, p2: Point3L): Long {
-        return (abs(p1.x - p2.x).`**`(2) +abs(p1.y - p2.y).`**`(2) + abs(p1.z - p2.z).`**`(2)).`**`(1.0/2.0)
+        return (p1.x - p2.x).`**`(2) +(p1.y - p2.y).`**`(2) + (p1.z - p2.z).`**`(2)
     }
 
 
