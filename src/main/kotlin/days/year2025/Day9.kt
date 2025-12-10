@@ -18,7 +18,6 @@ class Day9 : Day(9, 2025) {
     val ys = corners.map { it.y }.sorted().toSet()
     val xs = corners.map { it.x }.sorted().toSet()
 
-
     var outer = mutableListOf<Point>()
     var outerS: SortedSet<Point> = sortedSetOf()
 
@@ -26,10 +25,7 @@ class Day9 : Day(9, 2025) {
     var highest = 0L
 
     var all = mutableSetOf<Point>()
-    val allRanges = Array<MutableList<IntRange>>(maxy + 1) {
-        mutableListOf()
-    }
-
+    val allRanges = Array(maxy + 1) { IntRange.EMPTY }
 
     fun solve(): Any {
         corners.add(corners.first())
@@ -42,37 +38,23 @@ class Day9 : Day(9, 2025) {
         }
         outerS = outer.toSortedSet()
 
-        fun findH(y: Int): MutableList<IntRange> {
+        fun findH(y: Int): IntRange {
             val inter = outerS.filter { op ->
                 y == op.y
             }.map { it.x }
 
-            var on = true
             var previousx = inter.first()
             var beginonx = inter.first()
 
-            val ranges = mutableListOf<IntRange>()
-
             inter.takeLast(inter.size - 1).forEachIndexed { i, x ->
-                if (x - previousx == 1) {
-                    previousx = x
-                    if (i == inter.takeLast(inter.size - 1).size - 1) {
-                        if (!on) throw Exception("Ruben")
-                        ranges.add(beginonx..x)
-                    }
+                if (x - previousx > 1 || i == inter.takeLast(inter.size - 1).size - 1) {
+                    return beginonx..x
                 } else {
-                    if (on) {
-                        ranges.add(beginonx..x)
-                    } else {
-                        beginonx = x
-                    }
-                    on = !on
+                    previousx = x
                 }
-
             }
-            return ranges
+            throw Exception("")
         }
-
 
         ys.zipWithNext { firsty, secondy ->
             println(firsty)
@@ -96,18 +78,16 @@ class Day9 : Day(9, 2025) {
                     highest = size
                     println(highest)
                 }
-
             }
         }
         return highest
     }
 
     private fun possible(first: Point, second: Point): Boolean {
-        (min(first.y, second.y)..max(first.y, second.y)).filter{it in ys}.forEach { y ->
-            val ranges = allRanges[y]
-            (min(first.x, second.x)..max(first.x, second.x)).filter{it in xs}.forEach { x ->
-                val xinside = ranges.any { x in it }
-                if (!xinside) return false
+        (min(first.y, second.y)..max(first.y, second.y)).filter { it in ys }.forEach { y ->
+            val range = allRanges[y]
+            (min(first.x, second.x)..max(first.x, second.x)).filter { it in xs }.forEach { x ->
+                if (x !in range) return false
             }
         }
         return true

@@ -26,7 +26,8 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0") // or latest version
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.0")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.15.0")
-
+    implementation("org.apache.commons:commons-math3:3.6.1")
+    implementation("org.choco-solver:choco-solver:4.10.14")
 }
 
 tasks.withType<KotlinCompile> {
