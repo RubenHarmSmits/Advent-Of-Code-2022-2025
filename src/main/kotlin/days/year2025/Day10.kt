@@ -18,19 +18,18 @@ class Day10 : Day(10, 2025) {
             .sumOf { line -> choco(line) }
     }
 
-    fun choco(line: String):Int{
+    fun choco(line: String): Int {
         val goal = extraxtAllIntsFromString(line.substringAfter("{").substringBefore("}"))
-        val buttons = line.substringAfter("]").substringBefore("{").split("(").map { extraxtAllIntsFromString(it) }.filter { it.size != 0 }
+        val buttons = line.substringAfter("]").substringBefore("{").split("(").map { extraxtAllIntsFromString(it) }
+            .filter { it.size != 0 }
 
         val maxCLicks = goal.max()
         val model = Model(line)
 
-        val variables = buttons.mapIndexed { i, button ->
-            model.intVar(i.toString(), 0, maxCLicks)
-        }
+        val variables = buttons.indices.map { model.intVar(it.toString(), 0, maxCLicks) }
         goal.forEachIndexed { goali, goalAmount ->
-            val a = buttons.mapIndexedNotNull {i,b -> i.takeIf {goali in b  }}.map{variables[it]}.toTypedArray()
-            model.scalar(a, IntArray(a.size){1}, "=", goalAmount).post()
+            val a = buttons.mapIndexedNotNull { i, b -> i.takeIf { goali in b } }.map { variables[it] }.toTypedArray()
+            model.scalar(a, IntArray(a.size) { 1 }, "=", goalAmount).post()
         }
 
         val totalSum: IntVar = model.intVar("totalSum", 0, goal.sum())
@@ -40,7 +39,7 @@ class Day10 : Day(10, 2025) {
         model.solver.setSearch(Search.minDomLBSearch(*variables.toTypedArray()))
 
         var ans = 0
-        while(model.solver.solve()){
+        while (model.solver.solve()) {
             ans = variables.sumOf { it.value }
         }
         return ans
